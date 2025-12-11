@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import re
 
 
 real_df = pd.read_csv('traffic_weather_full2020.csv')
@@ -20,30 +21,40 @@ duplicates = real_df.duplicated().sum()
 print(missing_percentage)
 print(f"Number of exact duplicate rows: {duplicates}")
 
-
-#bin data by 2 hour intervals
-bins = list(range(0, 25, 2))  # 0,2,4,...,24
-labels = [f"{i}-{i+1}" for i in range(0, 24, 2)]
-
-real_df["Hour_Bin"] = pd.cut(
-    real_df["Hour"],
-    bins=bins,
-    labels=labels,
-    right=False
-)
-
-real_df.drop(columns=["Hour Of Day"], inplace=True)
+real_df["5 Minutes"] = pd.to_datetime(real_df["5 Minutes"], errors="coerce")
+real_df["Hour_Bin"] = real_df["5 Minutes"].dt.floor("H")
 
 
-real_df.columns = real_df.columns.str.strip()
+
+def clean_numeric(col):
+    return (
+        col.astype(str)
+           .str.extract(r"([-+]?\d*\.?\d+)")     # extract numeric portion
+           .astype(float)
+    )
+
+cols_to_clean = ["(mph)", "Wind Speed", "Wind Gust", "Flow", "Humidity", "Pressure", "Precip."]
+
+for col in cols_to_clean:
+    real_df[col] = clean_numeric(real_df[col])
+hourly = real_df.groupby("Hour_Bin").agg({
+    "Flow": "mean",
+    "(mph)": "mean",
+    "Humidity": "mean",
+    "Pressure": "mean",
+    "Wind Speed" : "mean",
+    "Wind Gust" : "mean",
+    "Pressure" : "mean",
+    "Precip." : "mean",
+})
+
 
 target_col = "Flow"
-
 X = real_df.drop(columns=[target_col])
 y = real_df[target_col]
 
-categorical_cols = real_df.select_dtypes(include=['object', 'category']).columns.tolist()
-numeric_cols = real_df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+numeric_cols = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
 preprocessor = ColumnTransformer(
     transformers=[

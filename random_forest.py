@@ -1,4 +1,3 @@
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -7,8 +6,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+
 
 #Import the data from the csv file
 futuristic_df = pd.read_csv('futuristic_city_traffic.csv')
@@ -86,7 +85,7 @@ X_valid, X_test, y_valid, y_test = train_test_split(
 model = Pipeline(steps=[
     ("preprocess", preprocessor),
     ("rf", RandomForestRegressor(
-        n_estimators=300,
+        n_estimators=100,
         max_depth=None,
         random_state=42,
         n_jobs=-1
